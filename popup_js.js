@@ -16,7 +16,7 @@ class Util {
 
 class API {
   constructor() {
-    this.baseUrl = "http://localhost:3000/dev";
+    this.baseUrl = "https://8rh32206f9.execute-api.us-east-1.amazonaws.com/dev";
   }
   get = async (url, query) => {
     let response = await fetch(`${this.baseUrl}${url}?${query}`);

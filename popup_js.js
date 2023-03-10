@@ -58,7 +58,7 @@ class BrowserService {
   };
   #setBrowserId = () => {
     let refb = this.#getCookie("refb");
-    if (refb.length == 0) {
+    if (refb?.length == 0) {
       refb = Util.create_UUID();
       this.#setCookie("refb", refb);
     }
@@ -281,12 +281,12 @@ class Popup {
 }
 
 class STWPopup extends Popup {
-  constructor(popupJson) {
-    super(popupJson);
+  constructor(popupJson, browserService, backendService) {
+    super(popupJson, browserService, backendService);
   }
-  show = () => {
-    //TODO
-  };
+  // show = () => {
+  //   //TODO
+  // };
 }
 class VisualPopup extends Popup {
   constructor(popupJson, browserService, backendService) {
@@ -311,7 +311,7 @@ class PopupFactory {
 
   #getPopup = (popupJson) => {
     switch (popupJson.type) {
-      case "STW":
+      case "stw":
         return new STWPopup(
           popupJson,
           this.#browserService,
@@ -452,7 +452,7 @@ console.log("Bitespeed Popups");
 
 // Adding Custom functions here, these are to be called by unlayer buttons/links.
 
-const spin_IT = function (transitionTime) {
+const spin_IT_old = function (transitionTime) {
   let main_spin_plate = document.getElementById("container_stw_aj");
   let btn_Spinner = document.getElementById("bitespeed-spin");
   let number_rotationDegree = Math.ceil(Math.random() * 1000) + 5000;
@@ -467,9 +467,62 @@ const spin_IT = function (transitionTime) {
   }, transitionTime * 1000 + 1000);
 };
 
-function nextView() {
+const spin_IT = function (transitionTime, desiredDegree = 90) {
+  desiredPie = currentPopup?.popupJson?.selectedPie;
+  console.log(desiredPie); // eg: pie7
+  desiredDegree = 360 - (desiredPie.split("pie")[1] - 1) * 36 + 72;
+  const settings = findPlateSettings(
+    currentPopup?.popupJson?.unlayerJson?.["OpenView"]
+  );
+  console.log(settings);
+
+  let main_spin_plate = document.getElementById("container_stw_aj");
+  let btn_Spinner = document.getElementById("bitespeed-spin");
+  if (btn_Spinner && main_spin_plate) {
+    let currentDegree = getRotationDegrees(main_spin_plate);
+    let diff = desiredDegree - currentDegree;
+    console.log(currentDegree, diff, desiredDegree);
+    diff = diff + 360 * 10;
+    main_spin_plate.style.transform =
+      "rotate(" + (currentDegree + diff) + "deg)";
+    setTimeout(() => {
+      nextView(true);
+      let second_spin_plate = document.getElementById("container_stw_aj");
+      if (second_spin_plate) {
+        second_spin_plate.style.transform = "rotate(" + diff + "deg)";
+      }
+    }, transitionTime * 1000 + 1000);
+  }
+};
+
+// Helper function to get rotation degree of an element
+function getRotationDegrees(element) {
+  let style = window.getComputedStyle(element);
+  let matrix = new WebKitCSSMatrix(style.webkitTransform);
+  return Math.round(Math.atan2(matrix.b, matrix.a) * (180 / Math.PI));
+}
+
+function nextView(isSpin = false) {
+  const country = document.getElementById("bitespeedCountryCode")?.value;
+  const userInput = document.getElementById("bitespeedUserInput")?.value;
+  console.log(country, userInput);
   let id = currentPopup.popupJson.id;
   bitespeed_popups[`${id}:bitespeed_popup`].nextView();
+}
+
+function findPlateSettings(obj) {
+  if (obj && obj.PlateSettings) {
+    return obj.PlateSettings;
+  }
+  for (const key in obj) {
+    if (typeof obj[key] === "object") {
+      const result = findPlateSettings(obj[key]);
+      if (result) {
+        return result;
+      }
+    }
+  }
+  return null;
 }
 
 // https://stackoverflow.com/questions/40140149/use-async-await-with-array-map
